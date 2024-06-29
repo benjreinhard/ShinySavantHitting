@@ -1,0 +1,68 @@
+---
+title: "Graphs/Analysis"
+author: "brian/benjamin"
+date: "12/5/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyr)
+library(ggpubr)
+library(janitor)
+library(rvest)
+```
+
+#testing tibbles & writing as csv's
+
+```{r}
+as_tibble(standard)
+as_tibble(advanced)
+as_tibble(official_standard)
+as_tibble(official_advanced)
+as_tibble(team_data)
+as_tibble(final)
+as_tibble(ball_park_data)
+
+
+write_csv(ball_park_data, file = "~/Mscs 264 F22/Project/Brian_Benjamin/ball_park_data.csv")
+
+write_csv(final, file = "~/Mscs 264 F22/Project/Brian_Benjamin/final.csv")
+
+write_csv(Base_running, file = "~/Mscs 264 F22/Project/Brian_Benjamin/Base_running.csv")
+
+write_csv(team_data, file = "~/Mscs 264 F22/Project/Brian_Benjamin/team_data.csv")
+
+write_csv(Plate_Disc, file = "~/Mscs 264 F22/Project/Brian_Benjamin/Plate_Disc.csv")
+
+write_csv(Con_Qual, file = "~/Mscs 264 F22/Project/Brian_Benjamin/Con_Qual.csv")
+
+write_csv(Standard_Primer , file = "~/Mscs 264 F22/Project/Brian_Benjamin/Standard_Primer.csv")
+
+
+```
+
+#test format for rendering plot
+renderPlotly({
+  ggplotly(
+    ggplot(team_data, aes_string(x = input$x, y = input$y)) +
+      geom_point(aes_string(color = "Team")) +
+      geom_line() +
+      stat_cor(aes_string(input$x, input$y), parse = TRUE)
+  )
+})
+
+
+
+#sample graph 1 to test correlations
+
+```{r}
+final %>%
+ggplot(mapping = aes(x = `EV AVG`, y = wOBA)) +
+    geom_point() +
+    geom_smooth() 
+```
+
+
+
+
+#sample graph 2 for correlations
