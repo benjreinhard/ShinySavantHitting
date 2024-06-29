@@ -1,0 +1,179 @@
+---
+title: "data wrangling for project"
+author: "brian/benjamin"
+date: "11/29/2022"
+output: html_document
+---
+
+
+```{r}
+library(tidyr)
+library(ggpubr)
+library(janitor)
+library(rvest)
+```
+
+```{r}
+standard <- read_csv("standard:baserun.csv")
+```
+
+```{r}
+advanced <- read_csv("advanced.csv")
+```
+
+# wrangling & tidying
+
+```{r}
+official_standard <- standard %>%
+  rename(Last = last_name,
+         First = first_name,
+         ID = player_id,
+         Age = player_age,
+         YR = year,
+         AB = b_ab,
+         PA = b_total_pa,
+         "K (%)" = b_k_percent,
+         "BB (%)" = b_bb_percent,
+         AVG = batting_avg,
+         SLG = slg_percent,
+         OBP = on_base_percent,
+         OPS = on_base_plus_slg,
+         ISO = isolated_power,
+         TotCS = r_total_caught_stealing,
+         TotSB = r_total_stolen_base,
+         wOBA = woba,
+         Sprint_Speed = sprint_speed) %>%
+  mutate(SB_Attempts = TotCS + TotSB,
+         SB_perc = TotSB/SB_Attempts) %>%
+  unite(Name, c(Last, First), sep = ", ", remove = FALSE) %>%
+  select(-...19, -Last, -First) %>%
+  print(n = 10)
+```
+
+
+```{r}
+official_advanced <- advanced %>%
+  rename(Last = last_name,
+         First = first_name,
+         ID = player_id,
+         YR = year,
+         Age = player_age,
+         AB = b_ab,
+         PA = b_total_pa,
+         "EV AVG" = exit_velocity_avg,
+         "LA AVG" = launch_angle_avg,
+         "Sweet Spot (%)" = sweet_spot_percent,
+         "Barrel Rate (%)" = barrel_batted_rate,
+         "Solid Con (%)" = solidcontact_percent,
+         "Flare (%)" = flareburner_percent,
+         "Under (%)" = poorlyunder_percent,
+         "Topped (%)" = poorlytopped_percent,
+         "Weak (%)" = poorlyweak_percent,
+         "Hard Hit (%)" = hard_hit_percent,
+         "ZSwing (%)" = z_swing_percent,
+         "ZMiss (%)" = z_swing_miss_percent,
+         "OZ Swing (%)" = oz_swing_percent,
+         "OZ Miss (%)" = oz_swing_miss_percent,
+         "OZ Con (%)" = oz_contact_percent,
+         "OZ (%)" = out_zone_percent,
+         "MB Swing (%)" = meatball_swing_percent,
+         "MB (%)" = meatball_percent,
+         "IZ Con (%)" = iz_contact_percent,
+         "IZ (%)" = in_zone_percent,
+         "Edge (%)" = edge_percent,
+         "Whiff (%)" = whiff_percent,
+         "Swing (%)" = swing_percent,
+         "Pull (%)" = pull_percent,
+         "Center (%)" = straightaway_percent,
+         "Oppo (%)" = opposite_percent,
+         "GB (%)" = groundballs_percent,
+         "FB (%)" = flyballs_percent,
+         "LD (%)" = linedrives_percent,
+         "PU (%)" = popups_percent) %>%
+  unite(Name, c(Last, First), sep = ", ", remove = FALSE) %>%
+  select(-Last, -First, -...38) %>%
+  print(n = 10)
+```
+
+#joining data sets
+
+```{r}
+final <- full_join(official_standard, official_advanced, match = "first")
+```
+
+#creating smaller sets 
+
+#used select of columns out of final
+
+```{r}
+View(Base_running)
+View(Con_Qual)
+View(Plate_Disc)
+View(team_data)
+View(Standard)
+View(ball_park)
+```
+
+
+
+#team data wrangling
+
+```{r}
+robotstxt::paths_allowed("https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=0&type=8&season=2022&month=0&season1=2022&ind=0&team=0,ts&rost=&age=&filter=&players=0")
+comp <- read_html("https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=0&type=8&season=2022&month=0&season1=2022&ind=0&team=0,ts&rost=&age=&filter=&players=0")
+
+runs_scored <- comp %>%
+  html_nodes("#LeaderBoard1_dg1_ctl00 tr :nth-child(6)") %>%
+html_text()
+runs_scored
+
+wOBA_team <- comp %>%
+  html_nodes("#LeaderBoard1_dg1_ctl00 tr :nth-child(16)") %>%
+  html_text()
+wOBA_team
+
+team_OBP <- comp %>%
+  html_nodes("#LeaderBoard1_dg1_ctl00 tr :nth-child(14)") %>%
+  html_text()
+team_OBP
+
+team_SLG <- comp %>%
+  html_nodes("#LeaderBoard1_dg1_ctl00 tr :nth-child(15)") %>%
+  html_text()
+team_SLG
+
+wRC_pl <- comp %>%
+  html_nodes("#LeaderBoard1_dg1_ctl00 tr :nth-child(18)") %>%
+  html_text()
+  wRC_pl
+  
+
+team <- comp%>%
+  html_nodes(".grid_line_regular a") %>%
+  html_text()
+team
+
+team_data <- tibble(runs_scored, team_OBP, team_SLG, wOBA_team, wRC_pl) %>%
+  filter(team_OBP!="OBP") %>%
+  mutate(Runs = parse_number(runs_scored),
+         OBP = parse_number(team_OBP),
+         SLG = parse_number(team_SLG),
+         wOBA = parse_number(wOBA_team),
+         `wRC+` = parse_number(wRC_pl)) %>%
+  mutate(Team = team,
+         OPS = `OBP` + `SLG`) %>%
+ select(c(-1,-2,-3,-4,-5, -7, -8)) %>%
+  print(n = 30)
+```
+
+
+
+#sources etc
+
+links:
+https://library.fangraphs.com/offense/woba/
+https://baseballsavant.mlb.com/
+
+https://stackoverflow.com/questions/18115550/combine-two-or-more-columns-in-a-dataframe-into-a-new-column-with-a-new-name
+https://www.geeksforgeeks.org/remove-leading-whitespaces-from-a-string-in-r-language-trimws-function/
+https://www.geeksforgeeks.org/replace-all-the-matches-of-a-pattern-from-a-string-in-r-programming-gsub-function/
