@@ -1,0 +1,529 @@
+---
+title: "Analysis of Baseball Hitting Statistics"
+author: Brian Nevin & Benjamin Reinhard
+runtime: shiny
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+ <style>
+.navbar {
+ background-color:#3350FF;
+ border-color:black;
+}
+.navbar-brand {
+color:white!important;
+}
+
+
+</style>
+---
+
+```{r global,echo = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(shiny)
+library(dplyr)
+library(knitr)
+library(flexdashboard)
+library(plotly)
+library(scales)
+library(ggplot2)
+library(ggpubr)
+library(viridis)
+library(shinythemes)
+library(rsconnect)
+
+
+
+ball_park <- read_csv("ball_park_data.csv")
+
+final <- read_csv("final.csv")
+
+Base_running <- read_csv("Base_running.csv")
+
+team_data <- read_csv("team_data.csv")
+
+Plate_Disc <- read_csv("Plate_Disc.csv")
+
+Con_Qual <- read_csv("Con_Qual.csv")
+
+Standard <- read_csv("Standard_Primer.csv")
+
+Glossary <- read_csv("MSCS 264 Definitions.csv")
+
+```
+
+
+About, Sources, & Acknowledgements
+==========================
+
+Column {data-width = 400}
+-------------------------
+
+#### Background Information
+
+With this Shiny App, we are attempting to explore correlations between various hitting statistics and what makes a good baseball hitter. Using both standard and advanced stats from Baseball Savant and Fangraphs, we created categories for Team Data, Ballpark Data, Standard or Traditional stats, Base running, Plate Discipline, and Contact Quality. These categories help isolate different aspects of a hitter to try and decipher the statistics that give us the best information on our primary research question, "What makes a good baseball hitter?"
+
+#### Acknowledgements
+
+```{r, echo = FALSE}
+p("We would like to thank Daren Willman for his work in helping start Baseball Savant and making Statcast data easily accesible and available for the public. We would also like to thank the MSCS 264 TAs for their assistance; Andrew Noecker and Kaya Gendreau. Additionally, we would like to thank Professor Roback for his assistance on this project and throughout the semester.")
+```
+
+*Sources:*  
+
+[Baseball Savant](https://baseballsavant.mlb.com/)
+
+[Fangraphs](https://www.fangraphs.com/)
+
+[Sports Info Solutions](https://www.sportsinfosolutions.com/2022/08/24/the-meatball-analyzing-middle-middle-pitches/)
+
+[MLB](https://www.mlb.com/glossary) 
+
+[Pitcher List](https://www.pitcherlist.com/baseball-stats-glossary/)
+
+[Style Format](https://stackoverflow.com/questions/44305381/flexdashboard-change-title-bar-color)
+
+
+Column {data-width = 400}
+-------------------------
+
+```{r, echo = FALSE}
+strong("Important Term")
+```
+
+*wOBA*
+
+```{r, echo = FALSE}
+p("A version of on-base percentage that accounts for how a player reached base -- instead of simply considering whether a player reached base. The value for each method of reaching base is determined by how much that event is worth in relation to projected runs scored (example: a double is worth more than a single). We are using wOBA as our all-encompassing statistic to measure a hitter's value. This will allow us to see correlations between specific variables and wOBA, helping us see the most important statistical measures for baseball hitting success.")
+```
+
+
+#### Additional Helpful Information
+
+```{r, echo = FALSE}
+p("We are using data from the years 2015-2022. 2015 was the first year in which Statcast data was publicly available.")
+```
+
+
+Team Data
+==========================
+
+Inputs {.sidebar}
+-------------------------
+```{r, echo = FALSE}
+inputPanel(selectInput("x", label = "x-axis variable",
+                       choices = c("wOBA" = "wOBA",
+                                   "Runs" = "Runs",
+                                   "wRC+" = "`wRC+`",
+                                   "OPS" = "OPS")),
+           selectInput("y", label = "y-axis variable",
+                       choices = c("Runs" = "Runs",
+                                   "wRC+" = "`wRC+`",
+                                   "wOBA" = "wOBA",
+                                   "OPS" = "OPS"))
+           )
+
+strong("Suggestions of Highly Correlated Variables")
+```
+- wOBA and Runs
+- OPS and Runs
+
+
+Column 
+-------------------------
+
+```{r, echo = FALSE}
+renderPlotly({
+  ggplotly(
+    ggplot(team_data, aes_string(x = input$x, y = input$y)) +
+      geom_point(aes_string(color = "Team")) +
+      geom_line()
+  )
+})
+```
+
+```{r, echo = FALSE}
+strong("Terms")
+p("wOBA: A version of on-base percentage that accounts for how a player reached base -- instead of simply considering whether a player reached base. The value for each method of reaching base is determined by how much that event is worth in relation to projected runs scored (example: a double is worth more than a single)")
+p("OPS: Adds on-base percentage and slugging percentage to get one number that unites the two. It's meant to combine how well a hitter can reach base, with how well he can hit for average and for power")
+p("wRC+: Takes the statistic Runs Created and adjusts that number to account for external factors such as ballpark or era. It's adjusted, so a wRC+ of 100 is league average and 150 would be 50 percent above league average")
+```
+
+
+
+Ballpark Data
+==========================
+
+Inputs {.sidebar}
+-------------------------
+```{r, echo = FALSE}
+inputPanel(selectInput("x1", label = "x-axis variable",
+                       choices = c("run_value" = "run_value",
+                                   "single" = "single",
+                                   "double" = "double",
+                                   "triple" = "triple",
+                                   "HR" = "HR",
+                                   "OBP" = "OBP",
+                                   "SLG" = "SLG",
+                                   "wOBA" = "wOBA")),
+           selectInput("y1", label = "y-axis variable",
+                       choices = c("wOBA" = "wOBA",
+                                   "single" = "single",
+                                   "double" = "double",
+                                   "triple" = "triple",
+                                   "HR" = "HR",
+                                   "run_value" = "run_value",
+                                   "OBP" = "OBP",
+                                   "SLG" = "SLG"
+                                   ))
+           )
+
+strong("Suggestions of Highly Correlated Variables")
+
+```
+
+- Run Value and wOBA
+- Run Value and SLG
+
+Column 
+-------------------------
+
+```{r, echo = FALSE}
+renderPlotly({
+  ggplotly(
+    ggplot(ball_park, aes_string(x = input$x1, y = input$y1, color = "ball_park")) +
+      geom_point(aes_string(color = "ball_park")) +
+      geom_line() +
+      geom_smooth()
+  )
+})
+
+```
+
+```{r, echo = FALSE}
+strong("Terms")
+p("Run Value: Compares the rate of stats at home vs. stats on the road to determine the run scoring environment in a specific ballpark")
+p("OBP: Refers to how frequently a batter reaches base per plate appearance. Times on base include hits, walks and hit-by-pitches, but do not include errors, times reached on a fielder's choice or a dropped third strike")
+p("SLG: Represents the total number of bases a player records per at-bat. Unlike on-base percentage, slugging percentage deals only with hits and does not include walks and hit-by-pitches in its equation. the formula for slugging percentage is: (1B + 2Bx2 + 3Bx3 + HRx4)/AB")
+```
+
+
+Standard Stats
+==========================
+
+Inputs {.sidebar}
+-------------------------
+```{r, echo = FALSE}
+inputPanel(selectInput("x2", label = "x-axis variable",
+                       choices = c("BB (%)" = "`BB (%)`",
+                                   "Age" = "Age",
+                                   "K (%)" = "`K (%)`",
+                                   "AVG" = "AVG",
+                                   "SLG" = "SLG",
+                                   "OBP" = "OBP",
+                                   "OPS" = "OPS",
+                                   "ISO" = "ISO", 
+                                   "wOBA" = "wOBA")),
+           selectInput("y2", label = "y-axis variable",
+                       choices = c("wOBA" = "wOBA",
+                                   "Age" = "Age",
+                                   "K (%)" = "`K (%)`",
+                                   "BB (%)" = "`BB (%)`",
+                                   "AVG" = "AVG",
+                                   "SLG" = "SLG",
+                                   "OBP" = "OBP",
+                                   "OPS" = "OPS",
+                                   "ISO" = "ISO" 
+                                   ))
+           )
+
+strong("Suggestions of Highly Correlated Variables")
+```
+
+- BB (%) and wOBA
+- ISO and wOBA
+
+Column 
+-------------------------
+
+```{r, echo = FALSE}
+renderPlotly({
+  ggplotly(
+    ggplot(final, aes_string(x = input$x2, y = input$y2)) +
+    geom_point(aes_string(color = "Name")) +
+    geom_smooth() 
+  )
+  })
+```
+
+
+```{r, echo = FALSE}
+strong("Terms")
+p("K (%): The frequency with which a hitter strikes out, as determined by total strikeouts divided by total plate appearances")
+p("BB (%): Walks divided by plate appearances")
+  p("AVG: Determined by dividing a player's hits by his total at-bats for a number between zero (shown as .000) and one (1.000)")
+p("ISO: Measures the raw power of a hitter by taking only extra-base hits -- and the type of extra-base hit -- into account. The formula is Slugging percentage - Batting average")
+```
+
+Baserunning
+==========================
+
+Inputs {.sidebar}
+-------------------------
+```{r, echo = FALSE}
+inputPanel(selectInput("x3", label = "x-axis variable",
+                       choices = c("Age" = "Age",
+                                   "Sprint_Speed" = "Sprint_Speed",
+                                   "SB_Attempts" = "SB_Attempts",
+                                   "SB_perc" = "SB_perc",
+                                   "TotSB" = "TotSB")),
+           selectInput("y3", label = "y-axis variable",
+                       choices = c("Sprint_Speed" = "Sprint_Speed",
+                                   "Age" = "Age",
+                                   "SB_Attempts" = "SB_Attempts",
+                                   "SB_perc" = "SB_perc",
+                                   "TotSB" = "TotSB"))
+)
+
+strong("Suggestions of Highly Correlated Variables")
+```
+
+- Age and Sprint Speed
+- Sprint Speed and SB_Attempts
+
+Column 
+-------------------------
+
+```{r, echo = FALSE}
+renderPlotly({
+  ggplotly(
+    ggplot(final, aes_string(x = input$x3, y = input$y3)) +
+    geom_point(aes_string(color = "Name")) +
+    geom_smooth() 
+)
+  })
+```
+
+
+```{r, echo = FALSE}
+strong("Terms")
+p("Sprint Speed: How fast a base runner is running in feet per second")
+p("SB Perc.: The number of times a player successfully stole a base divided by their total attempts")
+p("TotSB: Total number of times a player stole a base")
+p("TotCS: Total number of times a player was caught stealing")
+```
+
+
+Plate Discipline
+==========================
+
+Inputs {.sidebar}
+-------------------------
+```{r, echo = FALSE}
+inputPanel(selectInput("x4", label = "x-axis variable",
+                       choices = c("wOBA" = "wOBA",
+                                   "Age" = "Age",
+                                   "K (%)" = "`K (%)`",
+                                   "BB (%)" = "`BB (%)`",
+                                   "ZSwing (%)" = "`ZSwing (%)`",
+                                   "ZMiss (%)" = "`ZMiss (%)`",
+                                   "OZ Swing (%)" = "`OZ Swing (%)`",
+                                   "OZ Miss (%)" = "`OZ Miss (%)`",
+                                   "OZ Con (%)" = "`OZ Con`",
+                                   "OZ (%)" = "`OZ (%)`",
+                                   "MB Swing (%)" = "`MB Swing (%)`",
+                                   "MB (%)" = "`MB (%)`",
+                                   "IZ Con (%)" = "`IZ Con (%)`",
+                                   "IZ (%)" = "`IZ (%)`",
+                                   "Edge (%)" = "`Edge (%)`",
+                                   "Whiff (%)" = "`Whiff (%)`",
+                                   "Swing (%)" = "`Swing (%)`")),
+           selectInput("y4", label = "y-axis variable",
+                       choices = c("MB (%)" = "`MB (%)`",
+                                   "Age" = "Age",
+                                   "K (%)" = "K (%)",
+                                   "BB (%)" = "BB (%)",
+                                   "wOBA" = "wOBA",
+                                   "ZSwing (%)" = "`ZSwing (%)`",
+                                   "ZMiss (%)" = "`ZMiss (%)`",
+                                   "OZ Swing (%)" = "`OZ Swing (%)`",
+                                   "OZ Miss (%)" = "`OZ Miss (%)`",
+                                   "OZ Con (%)" = "`OZ Con`",
+                                   "OZ (%)" = "`OZ (%)`",
+                                   "MB Swing (%)" = "`MB Swing (%)`",
+                                   "IZ Con (%)" = "`IZ Con (%)`",
+                                   "IZ (%)" = "`IZ (%)`",
+                                   "Edge (%)" = "`Edge (%)`",
+                                   "Whiff (%)" = "`Whiff (%)`",
+                                   "Swing (%)" = "`Swing (%)`"))
+           )
+
+strong("Suggestions of Highly Correlated Variables")
+```
+
+- wOBA and MB (%)
+- OZ Swing (%) and wOBA
+- OZ Miss (%) and K (%)
+- Age and IZ Con (%)
+
+
+Column 
+-------------------------
+
+```{r, echo = FALSE}
+renderPlotly({
+  ggplotly(
+    ggplot(final, aes_string(x = input$x4, y = input$y4)) +
+    geom_point(aes_string(color = "Name")) +
+    geom_smooth() 
+)
+  })
+```
+
+
+```{r, echo = FALSE}
+strong("Terms")
+p("OZ Swing (%): Swings at pitches outside the zone / total pitches outside the zone")
+p("OZ Miss (%): Swings and misses at pitches outside the zone / total pitches outside the zone")
+p("MB (%): Number of middle-middle pitches seen / total pitches")
+p("IZ Con (%): Number of pitches on which contact was made on pitches inside the zone / Swings on pitches inside the zone")
+```
+
+
+Contact Quality
+==========================
+
+Inputs {.sidebar}
+-------------------------
+```{r, echo = FALSE}
+inputPanel(selectInput("x5", label = "x-axis variable",
+                       choices = c("EV AVG" = "`EV AVG`",
+                                   "Age" = "Age",
+                                   "ISO" = "ISO",
+                                   "wOBA" = "wOBA",
+                                   "LA AVG" = "`LA AVG`",
+                                   "Sweet Spot (%)" = "`Sweet Spot (%)`",
+                                   "Barrel Rate (%)" = "`Barrel Rate (%)`",
+                                   "Solid Con (%)" = "`Solid Con (%)`",
+                                   "Flare (%)" = "`Flare (%)`",
+                                   "Under (%)" = "`Under (%)`",
+                                   "Topped (%)" = "`Topped (%)`",
+                                   "Weak (%)" = "`Weak (%)`",
+                                   "Hard Hit (%)" = "`Hard Hit (%)`",
+                                   "Pull (%)" = "`Pull (%)`",
+                                   "Center (%)" = "`Center (%)`",
+                                   "Oppo (%)" = "`Oppo (%)`",
+                                   "GB (%)" = "`GB (%)`",
+                                   "FB (%)" = "`FB (%)`",
+                                   "LD (%)" = "`LD (%)`",
+                                   "PU (%)" = "`PU (%)`")),
+           selectInput("y5", label = "y-axis variable",
+                       choices = c("wOBA" = "wOBA",
+                                   "Age" = "Age",
+                                   "ISO" = "ISO",
+                                   "EV AVG" = "`EV AVG`",
+                                   "LA AVG" = "`LA AVG`",
+                                   "Sweet Spot (%)" = "`Sweet Spot (%)`",
+                                   "Barrel Rate (%)" = "`Barrel Rate (%)`",
+                                   "Solid Con (%)" = "`Solid Con (%)`",
+                                   "Flare (%)" = "`Flare (%)`",
+                                   "Under (%)" = "`Under (%)`",
+                                   "Topped (%)" = "`Topped (%)`",
+                                   "Weak (%)" = "`Weak (%)`",
+                                   "Hard Hit (%)" = "`Hard Hit (%)`",
+                                   "Pull (%)" = "`Pull (%)`",
+                                   "Center (%)" = "`Center (%)`",
+                                   "Oppo (%)" = "`Oppo (%)`",
+                                   "GB (%)" = "`GB (%)`",
+                                   "FB (%)" = "`FB (%)`",
+                                   "LD (%)" = "`LD (%)`",
+                                   "PU (%)" = "`PU (%)`"))
+           )
+
+strong("Suggestions of Highly Correlated Variables")
+```
+
+- EV and wOBA
+- EV and ISO
+- Under % and PU %
+- Barrel Rate % and wOBA
+
+
+Column 
+-------------------------
+
+```{r, echo = FALSE}
+renderPlotly({
+  ggplotly(
+    ggplot(final, aes_string(x = input$x5, y = input$y5)) +
+    geom_point(aes_string(color = "Name")) +
+    geom_smooth() 
+)
+  })
+```
+
+
+```{r, echo = FALSE}
+strong("Terms")
+p("EV AVG: The average exit velocity in miles per hour")
+p("Under (%): The amount of times a player gets under the ball divided by batted balls")
+p("PU (%):The number of  pop ups a player hits / total number of batted balls ")
+p("Barrel Rate (%):To be Barreled, a batted ball requires an exit velocity of at least 98 mph. At that speed, balls struck with a launch angle between 26-30 degrees always garner Barreled classification. For every mph over 98, the range of launch angles expands. The formula is the number of barrels divided by the number of batted balls. ")
+```
+
+
+
+Additional Useful Terms
+==========================
+
+```{r, echo = FALSE}
+p("ZSwing (%): Swings at pitches inside the zone / total pitches inside the zone", "ZMiss (%): Swings and misses at pitches inside the zone / total pitches inside the zone")
+p("OZ Con (%): Number of pitches on which contact was made on pitches outside the zone / Total swings on pitches outside the zone")
+p("OZ (%): Total pitches seen outside of the zone / total number of pitches seen")
+p("MB Swing (%): Number of swings on middle-middle pitches / total pitches")
+p("IZ (%): Pitches seen inside of the zone / total number of pitches seen")
+p("Edge (%): Number of pitches a hitter sees on the edge or border of the strike zone/ total number of pitches")
+p("Whiff (%): Number of times a hitter swings and misses / total number of pitches")
+p("Swing (%): Number of times a hitter swings / total number of pitches")
+p("Sweet Spot (%): Percentage of batted-ball events with a launch angle ranging from 8 to 32 degrees. The sweet spot percentage is taken by dividing the number of times a player hits the sweet spot by the number of batted balls")
+p("Barrel Rate (%): To be Barreled, a batted ball requires an exit velocity of at least 98 mph. At that speed, balls struck with a launch angle between 26-30 degrees always garner Barreled classification. For every mph over 98, the range of launch angles expands. The formula is the number of barrels divided by the number of batted balls")
+p("Solid Con (%): Generally, solid contact is a ball hit in the air with a decent likelihood of an extra-base hit, but does not quite reach the requirements of a barrel. Solid Con % = (Solid Contact)/Batted Balls")
+p("Flare (%): Percentage of batted balls hit into the shallow outfield")
+p("Topped (%): The amount of times a player tops the ball divided by batted balls")
+p("Weak (%): Amount of times a player makes weak contact divided by batted balls")
+p("Hard Hit (%): Percentage of batted balls with an exit velocity of 95 mph or higher")
+p("Oppo (%): The number of batted balls a hitter hits to their opposite side/ total number of batted balls")
+p("GB (%): The number of  groundballs a hitter hits / total number of batted balls")
+p("FB (%): The number of  flyballs a hitter hits / total number of batted balls")
+p("LD (%): The number of  line drives a hitter hits / total number of batted balls")
+```
+
+Conclusion
+==========================
+
+Row
+-------------------------
+
+```{r, echo = FALSE}
+strong("Team Data")
+p("wOBA, OPS, and wRC+ all have very strong correlations with the number of runs scored by team. We decided to use wOBA since it had the strongest correlation when we ran R^2 values in our preliminary data analysis. wOBA was also easily accessible across all of our data sets.")
+
+strong("Ballpark Data")
+p("When looking at our data sets sorted by ballpark, we were able to see that the ballpark plays a role in a multitude of statistics. Specifically, we were vindicated in seeing the strong correlation between wOBA, SLG, and run value.")
+
+strong("Standard")
+p("When examining this set of data, we were able to find a number of stats that were seemingly predictive of wOBA, namely BB (%) and ISO.")
+
+strong("Baserunning")
+p("Baserunning statistics were quite intuitive. As players aged, their speed and general baserunning statistics declined. Players are fastest and most effective as baserunners in their 'athletic prime', or their mid to late 20s.")
+
+strong("Plate Discipline")
+p("Plate Discipline provided us with some interesting insights. Specifically, as a player's wOBA increases, they tend to see less meatballs. Additionally, increasing number of swings and also misses at pitches out of the zone results in a lower wOBA and increased K %. 'Positive' statistics tend to correlate well with increased wOBA, such as BB% and IZ Con.")
+
+strong("Contact Quality")
+p("Contact Quality brought us relatively straightforward conclusions. Positive statistics, such as Exit Velocity, Sweet Spot %, Barrel Rate %, Hard Hit %, and LD % correspond highly positively with wOBA. More negative statistics, such as Flare %, Under %, Topped %, and Weak % lead to lower wOBAs.")
+```
+
