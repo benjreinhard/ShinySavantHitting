@@ -65,4 +65,3 @@ ggplot(mapping = aes(x = `EV AVG`, y = wOBA)) +
 
 
 
-#sample graph 2 for correlations
